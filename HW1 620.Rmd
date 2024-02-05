@@ -29,8 +29,12 @@ colnames(screen_activity)[2] <- c("total ST (h)")
 colnames(screen_activity)[4] <- c("Social ST (h)")
 screen_activity$`total ST (h)` <- gsub("h", "", screen_activity$`total ST (h)`)
 screen_activity$`Social ST (h)` <- gsub("h", "", screen_activity$`Social ST (h)`)
-screen_activity$`first Pick up` <- gsub("1899-12-31", "", screen_activity$`first Pick up`)
-colnames(screen_activity) <- c("Date", "total_ST_h", "total_ST_min", "Social_ST_h", "Social_ST_min", "Pick_up", "first_Pick_up", "weekday_or_not", "daily_proportion_social_ST", "daily_duration_per_use")
+screen_activity$`first Pick up` <- gsub("1899-12-31", "", 
+                                        screen_activity$`first Pick up`)
+colnames(screen_activity) <- c("Date", "total_ST_h", "total_ST_min", 
+                               "Social_ST_h", "Social_ST_min", "Pick_up", 
+                               "first_Pick_up", "weekday_or_not", 
+                               "daily_proportion_social_ST", "daily_duration_per_use")
 
 
 screen_activity$Date <- as.Date(screen_activity$Date, format = "%m/%d/%Y")
@@ -70,10 +74,12 @@ The data is collected from the participant's screen activity recorded in the mob
 
 ```{r}
 # Calculate daily proportion of social screen time (as a percentage)
-screen_activity$daily_proportion_social_ST <- (screen_activity$Social_ST_min / screen_activity$total_ST_min) * 100
+screen_activity$daily_proportion_social_ST <- (screen_activity$Social_ST_min / 
+                                                 screen_activity$total_ST_min) * 100
 
 # Calculate daily duration per use (in minutes)
-screen_activity$daily_duration_per_use <- screen_activity$total_ST_min / screen_activity$Pick_up
+screen_activity$daily_duration_per_use <- 
+  screen_activity$total_ST_min / screen_activity$Pick_up
 head(screen_activity)
 ```
 
@@ -86,7 +92,8 @@ Daily total screen time doesn't have much difference between weekend or weekday.
 library(ggplot2)
 par(mfrow = c(2, 3))
 
-screen_activity$weekday_factor <- factor(screen_activity$weekday_or_not, labels = c("weekends", "weekdays"))
+screen_activity$weekday_factor <- factor(screen_activity$weekday_or_not, 
+                                         labels = c("weekends", "weekdays"))
 
 # Daily Total Screen Time
 ggplot(screen_activity, aes(x = Date, y = total_ST_min, color = weekday_factor)) +
@@ -100,7 +107,8 @@ ggplot(screen_activity, aes(x = Date, y = total_ST_min, color = weekday_factor))
 ggplot(screen_activity, aes(x = Date, y = Social_ST_min, color = weekday_factor)) +
   geom_point() +
   geom_line(color = "grey") +
-  labs(title = "Daily Total Social Screen Time", x = "Date", y = "Social Screen Time (minutes)")
+  labs(title = "Daily Total Social Screen Time", x = "Date", 
+       y = "Social Screen Time (minutes)")
 
 # Plot of Daily Number of Pickups
 ggplot(screen_activity, aes(x = Date, y = Pick_up, color = weekday_factor)) +
@@ -109,13 +117,16 @@ ggplot(screen_activity, aes(x = Date, y = Pick_up, color = weekday_factor)) +
   labs(title = "Daily Number of Pickups", x = "Date", y = "Number of Pickups")
 
 # Plot of Daily Proportion of Social Screen Time
-ggplot(screen_activity, aes(x = Date, y = daily_proportion_social_ST, color = weekday_factor)) +
+ggplot(screen_activity, aes(x = Date, y = daily_proportion_social_ST, 
+                            color = weekday_factor)) +
   geom_point() +
   geom_line(color = "grey") +
-  labs(title = "Daily Proportion of Social Screen Time", x = "Date", y = "Proportion (%)")
+  labs(title = "Daily Proportion of Social Screen Time", x = "Date", 
+       y = "Proportion (%)")
 
 # Plot of Daily Duration per Use
-ggplot(screen_activity, aes(x = Date, y = daily_duration_per_use, , color = weekday_factor)) +
+ggplot(screen_activity, aes(x = Date, y = daily_duration_per_use, , 
+                            color = weekday_factor)) +
   geom_point() +
   geom_line(color = "grey") +
   labs(title = "Daily Duration per Use", x = "Date", y = "Duration per Use (minutes)")
@@ -126,8 +137,11 @@ Proportion of total screen time vs social screen time has the highest positive c
 ```{r}
 library(GGally)
 ggpairs(screen_activity, 
-        columns = c("total_ST_min", "Social_ST_min", "Pick_up", "daily_proportion_social_ST", "daily_duration_per_use"),
-        columnLabels = c("Total Screen Time", "Social Screen Time", "Total Pickups", "Proportion Social ST", "Duration per Use")) +
+        columns = c("total_ST_min", "Social_ST_min", "Pick_up", 
+                    "daily_proportion_social_ST", "daily_duration_per_use"),
+        columnLabels = c("Total Screen Time", "Social Screen Time", 
+                         "Total Pickups", "Proportion Social ST", 
+                         "Duration per Use")) +
   theme_bw()
 ```
 
@@ -190,11 +204,13 @@ library(ggplot2)
 screen_activity <- screen_activity %>%
   mutate(
     first_Pick_up = hms(first_Pick_up),
-    Pickup_1st_angular = (hour(first_Pick_up) * 60 + minute(first_Pick_up)) / (24 * 60) * 360
+    Pickup_1st_angular = (hour(first_Pick_up) * 60 + 
+                            minute(first_Pick_up)) / (24 * 60) * 360
   )
 
 # Create a circular object
-first_pickup_cir <- circular(screen_activity$Pickup_1st_angular, units = "degrees", template = "clock24")
+first_pickup_cir <- circular(screen_activity$Pickup_1st_angular, units = 
+                               "degrees", template = "clock24")
 ```
 
 ### b
@@ -209,7 +225,8 @@ dev.off()
 We chose a bin size of 30 minutes interval with 144 bins to reflect more details since the variation is quite large for the time frame. As shown in the graph, the person's first pick up time is mostly at 8am. And if it is not 8am, then the pickup time would vary mostly likely to be around 10am to 1pm. 
 ```{r}
 # histogram
-plot(first_pickup_cir, stack = TRUE, bins = 144, col = "blue") # 48 bins for 30-minute intervals
+plot(first_pickup_cir, stack = TRUE, bins = 144, col = "blue") 
+# 48 bins for 30-minute intervals
 dev.off()
 ```
 
@@ -220,7 +237,8 @@ $S_t$ is needed to capture the variability of the daily total screen time. It pr
 
 ### b
 ```{r}
-poisson_model <- glm(Pick_up ~ offset(log(total_ST_h)), family = poisson, data = screen_activity)
+poisson_model <- glm(Pick_up ~ offset(log(total_ST_h)), family = poisson, 
+                     data = screen_activity)
 
 summary(poisson_model)
 ```
@@ -233,7 +251,8 @@ screen_activity <- screen_activity %>%
     Zt = as.numeric(Date >= "2024-01-10")
   )
 screen_activity$total_ST_h <- as.numeric(screen_activity$total_ST_h)
-log_linear_model <- glm(Pick_up ~ Xt + Zt + offset(log(total_ST_h)), family = poisson, data = screen_activity)
+log_linear_model <- glm(Pick_up ~ Xt + Zt + offset(log(total_ST_h)), 
+                        family = poisson, data = screen_activity)
 
 summary(log_linear_model)
 ```
@@ -265,7 +284,7 @@ probability_8_30_or_later <- 1 - pvonmises(cutoff, mu, lambda)
 
 print(probability_8_30_or_later)
 ```
-
+### Github link: https://github.com/ChongweiShi47/620-HW1
 
 
 
