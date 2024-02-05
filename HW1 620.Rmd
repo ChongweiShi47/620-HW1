@@ -1,0 +1,278 @@
+---
+title: "HW1 620"
+author: 'Chongwei Shi'
+output:
+  pdf_document:
+    toc: no
+  bookdown::pdf_document2:
+    number_sections: yes
+    toc: no
+  html_document:
+    toc: no
+    df_print: paged
+documentclass: article
+fontsize: 12pt
+geometry: margin=0.9in
+link-citations: yes
+linkcolor: blue
+---
+
+## Problem 1
+
+```{r}
+library(readxl)
+screen_activity = read_excel("Screen Time.xlsx")
+head(screen_activity)
+
+# Data cleansing
+colnames(screen_activity)[2] <- c("total ST (h)")
+colnames(screen_activity)[4] <- c("Social ST (h)")
+screen_activity$`total ST (h)` <- gsub("h", "", screen_activity$`total ST (h)`)
+screen_activity$`Social ST (h)` <- gsub("h", "", screen_activity$`Social ST (h)`)
+screen_activity$`first Pick up` <- gsub("1899-12-31", "", screen_activity$`first Pick up`)
+colnames(screen_activity) <- c("Date", "total_ST_h", "total_ST_min", "Social_ST_h", "Social_ST_min", "Pick_up", "first_Pick_up", "weekday_or_not", "daily_proportion_social_ST", "daily_duration_per_use")
+
+
+screen_activity$Date <- as.Date(screen_activity$Date, format = "%m/%d/%Y")
+screen_activity$total_ST_h <- as.numeric(screen_activity$total_ST_h)
+```
+
+### a 
+The purpose of the data collection is to analyze the impact of screen time and social behavior, and daily routine. The hypothesis is that the increase of screen time, espeicially on social media platforms has a relationship to the later first pick up times in the morning. A prior study that is related to this topic includes the research by Woods and Scott, which suggested that excesive screen time can delay time of sleep and quality of sleep. 
+
+### b
+This is important as the data collection includes private data of individuals. Although it is anonymous, the participants still have the right to understand the purpose of the data collection, the process of the experiment, potential harm and benefits, and what the process will do to protect participants to the largest extent.
+
+### c
+
+The data is collected between the time period of 12/24/2023 to 1/26/2024 with a duration of 34 days. The variables collected include:
+
+Date: The date of each data entry.
+
+Total Screen Time: The total duration of screen time for each day in hours.
+
+Total Screen Time Minutes: The total duration of screen time for each day in minutes.
+
+Social Screen Time: The duration of screen time spent on social activities for each day in hours.
+
+Social Screen Time Minutes: The duration of screen time spent on social activities for each day in minutes.
+
+Pick up: The number of times the device was picked up during each day.
+
+First Pick up: The  first pickup time of the device for each day.
+
+Weekday or Not: A binary variable indicating whether the day is a weekday (1) or not (0).
+
+The data is collected from the participant's screen activity recorded in the mobile device. The data collection ends on the end of the day of 1/26/24 which is Friday. 
+
+
+### d
+
+```{r}
+# Calculate daily proportion of social screen time (as a percentage)
+screen_activity$daily_proportion_social_ST <- (screen_activity$Social_ST_min / screen_activity$total_ST_min) * 100
+
+# Calculate daily duration per use (in minutes)
+screen_activity$daily_duration_per_use <- screen_activity$total_ST_min / screen_activity$Pick_up
+head(screen_activity)
+```
+
+## Problem 2
+
+### a
+Daily total screen time doesn't have much difference between weekend or weekday. The total minutes seem to be around 600-800minutes throughout the entire period. Compared to the total screen time, the total social screentime seem to be a lot lower with around 200-450minutes. There is one outlier that is during weekend. Similarly, it does not seem that weekend or weekday effects the daily number of pickups. The variability seems to be a lot higher espcicially during the week of Dec 25 and Jan 15. The variability of the daily proportion of social screen time is higher varying from 25% to almost 70%. Interestingly, there is no increasing or decreasing pattern. Differently, the daily duration per use has less variability. There may be one outlier that is during weekend. 
+
+```{r}
+library(ggplot2)
+par(mfrow = c(2, 3))
+
+screen_activity$weekday_factor <- factor(screen_activity$weekday_or_not, labels = c("weekends", "weekdays"))
+
+# Daily Total Screen Time
+ggplot(screen_activity, aes(x = Date, y = total_ST_min, color = weekday_factor)) +
+  geom_point() +
+  geom_line(color = "grey") + 
+  labs(title = "Daily Total Screen Time",  
+       x = "Date",
+       y = "Screen Time (minutes)")
+
+# Daily Total Social Screen Time
+ggplot(screen_activity, aes(x = Date, y = Social_ST_min, color = weekday_factor)) +
+  geom_point() +
+  geom_line(color = "grey") +
+  labs(title = "Daily Total Social Screen Time", x = "Date", y = "Social Screen Time (minutes)")
+
+# Plot of Daily Number of Pickups
+ggplot(screen_activity, aes(x = Date, y = Pick_up, color = weekday_factor)) +
+  geom_point() +
+  geom_line(color = "grey") +
+  labs(title = "Daily Number of Pickups", x = "Date", y = "Number of Pickups")
+
+# Plot of Daily Proportion of Social Screen Time
+ggplot(screen_activity, aes(x = Date, y = daily_proportion_social_ST, color = weekday_factor)) +
+  geom_point() +
+  geom_line(color = "grey") +
+  labs(title = "Daily Proportion of Social Screen Time", x = "Date", y = "Proportion (%)")
+
+# Plot of Daily Duration per Use
+ggplot(screen_activity, aes(x = Date, y = daily_duration_per_use, , color = weekday_factor)) +
+  geom_point() +
+  geom_line(color = "grey") +
+  labs(title = "Daily Duration per Use", x = "Date", y = "Duration per Use (minutes)")
+```
+
+### b
+Proportion of total screen time vs social screen time has the highest positive corrleation and duration per use vs total pick up has the second highiest with a negative correlation. 
+```{r}
+library(GGally)
+ggpairs(screen_activity, 
+        columns = c("total_ST_min", "Social_ST_min", "Pick_up", "daily_proportion_social_ST", "daily_duration_per_use"),
+        columnLabels = c("Total Screen Time", "Social Screen Time", "Total Pickups", "Proportion Social ST", "Duration per Use")) +
+  theme_bw()
+```
+
+### c
+In general, it seems like screen time is very active from the five plots. There is higher probability for x-axis to be greater for all 5 plots. 
+```{r}
+par(mfrow = c(2, 3))
+# Daily Total Screen Time
+cdf_total <- ecdf(screen_activity$total_ST_min) 
+plot(cdf_total, main="Total Screen Time",
+     xlab="Minutes", ylab="P(X >= x)")
+
+# Daily Social Screen Time
+cdf_social <- ecdf(screen_activity$Social_ST_min)
+plot(cdf_social, main="Social Screen Time",
+     xlab="Minutes", ylab="P(X >= x)")
+
+# Daily Pickups 
+cdf_pickups <- ecdf(screen_activity$Pick_up)
+plot(cdf_pickups, main="Pickups",
+     xlab="Pickups", ylab="P(X >= x)")
+
+# Daily Proportion Social Screen Time
+cdf_prop <- ecdf(screen_activity$daily_proportion_social_ST)
+plot(cdf_prop, main="Proportion Social Screen",
+     xlab="Proportion", ylab="P(X >= x)")
+
+# Daily Duration per Use
+cdf_duration <- ecdf(screen_activity$daily_duration_per_use)
+plot(cdf_duration, main="Duration per Use",
+     xlab="Minutes", ylab="P(X >= x)")
+```
+
+### d
+It seems like the only significant autocorrelation is with Pick_up with lag 1 indicating that there is a positive autocorrelation at a 1 day lag. This can indicate that high pickups on one day are likely to be followed by high pickups the following day.
+```{r}
+par(mfrow = c(2, 3))
+
+acf(screen_activity$total_ST_min)
+acf(screen_activity$Social_ST_min)
+acf(screen_activity$Pick_up)
+acf(screen_activity$daily_proportion_social_ST)
+acf(screen_activity$daily_duration_per_use)
+
+
+acf(screen_activity$Pick_up, plot = FALSE)
+
+```
+
+## Problem 3
+
+### a
+```{r}
+library(dplyr)
+library(circular)
+library(lubridate)
+library(ggplot2)
+
+# Convert 'first_Pick_up' to a POSIXct object, assuming the dates are on the same day
+screen_activity <- screen_activity %>%
+  mutate(
+    first_Pick_up = hms(first_Pick_up),
+    Pickup_1st_angular = (hour(first_Pick_up) * 60 + minute(first_Pick_up)) / (24 * 60) * 360
+  )
+
+# Create a circular object
+first_pickup_cir <- circular(screen_activity$Pickup_1st_angular, units = "degrees", template = "clock24")
+```
+
+### b
+The first pickup time varies from around 7am to 1pm. This person seem to have a wide first pickup pattern. If first pickup time can somewhat reflect the wake up pattern, this indicates that this person does not seem to have a routine wake up time. 
+```{r}
+# Scatterplot
+plot(first_pickup_cir, col = "blue")
+dev.off()
+```
+
+### c
+We chose a bin size of 30 minutes interval with 144 bins to reflect more details since the variation is quite large for the time frame. As shown in the graph, the person's first pick up time is mostly at 8am. And if it is not 8am, then the pickup time would vary mostly likely to be around 10am to 1pm. 
+```{r}
+# histogram
+plot(first_pickup_cir, stack = TRUE, bins = 144, col = "blue") # 48 bins for 30-minute intervals
+dev.off()
+```
+
+## Problem 4
+
+### a
+$S_t$ is needed to capture the variability of the daily total screen time. It provides a scaling effect assuming that with the days of more screen time, we might expect more pickups.
+
+### b
+```{r}
+poisson_model <- glm(Pick_up ~ offset(log(total_ST_h)), family = poisson, data = screen_activity)
+
+summary(poisson_model)
+```
+
+### c
+```{r}
+screen_activity <- screen_activity %>%
+  mutate(
+    Xt = as.numeric(weekday_factor == "weekdays"),
+    Zt = as.numeric(Date >= "2024-01-10")
+  )
+screen_activity$total_ST_h <- as.numeric(screen_activity$total_ST_h)
+log_linear_model <- glm(Pick_up ~ Xt + Zt + offset(log(total_ST_h)), family = poisson, data = screen_activity)
+
+summary(log_linear_model)
+```
+### (c1)
+The p-value for Xt is 0.234 which is not smaller than 0.05, so we would not say that there is a statistically significant difference in daily pickups between weekdays and weekends.
+
+### (c2) 
+The p-value for Zt is 0.77 which is not smaller than 0.05, so we would not say that there is a statistically significant change in daily pickups after January 10th, the start of the winter semester.
+
+## Problem 5
+### a
+```{r}
+screen_activity <- screen_activity %>%
+  mutate(
+    Pickup_1st_hours = hour(first_Pick_up) + minute(first_Pick_up) / 60,
+    Pickup_1st_radians = Pickup_1st_hours * (2 * pi / 24)
+  )
+
+estimates <- mle.vonmises(screen_activity$Pickup_1st_radians)
+print(estimates)
+mu = estimates$mu
+lambda = estimates$kappa
+```
+
+### b
+```{r}
+cutoff <- (8 + 30/60) * (pi/12) # 8:30AM in radians
+probability_8_30_or_later <- 1 - pvonmises(cutoff, mu, lambda) 
+
+print(probability_8_30_or_later)
+```
+
+
+
+
+
+
+
+
+
+
+
